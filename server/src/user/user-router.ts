@@ -8,7 +8,7 @@ export class UserRouter implements Router {
   userController: UserController
   constructor(app: express.Application, serviceContainer: ServiceContainer) {
     this.app = app
-    this.userController = new UserController(serviceContainer.userService)
+    this.userController = new UserController(serviceContainer.user.service)
     this.setRoutes()
   }
   setRoutes() {
