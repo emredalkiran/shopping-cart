@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid'
 import redis from 'redis'
 import connectRedis from 'connect-redis'
 import { UserRouter } from './user/user-router'
+import { ProductRouter } from './product/product-router'
 import { SessionOptions } from 'express-session'
 
 export class App {
@@ -21,6 +22,7 @@ export class App {
 
   private setRoutes(serviceContainer: ServiceContainer): void {
     const userRouter = new UserRouter(this.instance, serviceContainer)
+    const productRouter = new ProductRouter(this.instance, serviceContainer)
   }
 
   configureApp(serviceContainer: ServiceContainer): void {
