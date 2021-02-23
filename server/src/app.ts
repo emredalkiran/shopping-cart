@@ -12,6 +12,7 @@ import connectRedis from 'connect-redis'
 import { UserRouter } from './user/user-router'
 import { ProductRouter } from './product/product-router'
 import { SessionOptions } from 'express-session'
+import { CartRouter } from './cart/cart-router'
 
 export class App {
   instance: express.Application
@@ -23,22 +24,30 @@ export class App {
   private setRoutes(serviceContainer: ServiceContainer): void {
     const userRouter = new UserRouter(this.instance, serviceContainer)
     const productRouter = new ProductRouter(this.instance, serviceContainer)
+    const cartRouter = new CartRouter(this.instance, serviceContainer)
   }
 
   configureApp(serviceContainer: ServiceContainer): void {
     const RedisStore = connectRedis(session)
     const redisClient = redis.createClient()
+    const sessionStore = new RedisStore({ client: redisClient, ttl: 1800 })
 
+    const sessionRoutes = [
+      '/user/login',
+      '/user/signup',
+      '/signup',
+      '/product/increment/',
+      '/product/decrement/'
+    ]
     const sessionOptions: SessionOptions = {
       genid: () => uuidv4(),
-      store: new RedisStore({ client: redisClient }),
+      store: sessionStore,
       secret: process.env.SESSION_SECRET!,
       resave: false,
       cookie: {
-        secure: process.env.NODE_ENV === 'development' ? false : true,
-        sameSite: true,
-        httpOnly: true,
-        maxAge: 3600000
+        secure: false,
+        httpOnly: false,
+        maxAge: 1800000
       },
       saveUninitialized: false
     }
@@ -46,7 +55,16 @@ export class App {
     this.instance.use(helmet())
     this.instance.use(bodyParser.urlencoded({ extended: true }))
     this.instance.use(bodyParser.json())
-    this.instance.use(cors<express.Request>())
+    this.instance.use(
+      cors<express.Request>({
+        origin: [
+          'http://127.0.0.1:3000',
+          'http://127.0.0.1:3000/',
+          'http://127.0.0.1:8080'
+        ],
+        credentials: true
+      })
+    )
     this.instance.use(session(sessionOptions))
     this.instance.use(
       expressWinston.logger({
