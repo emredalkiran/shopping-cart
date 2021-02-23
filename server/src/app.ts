@@ -32,13 +32,6 @@ export class App {
     const redisClient = redis.createClient()
     const sessionStore = new RedisStore({ client: redisClient, ttl: 1800 })
 
-    const sessionRoutes = [
-      '/user/login',
-      '/user/signup',
-      '/signup',
-      '/product/increment/',
-      '/product/decrement/'
-    ]
     const sessionOptions: SessionOptions = {
       genid: () => uuidv4(),
       store: sessionStore,
