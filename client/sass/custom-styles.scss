@@ -50,6 +50,9 @@
   font-weight: 800;
   text-align: center;
 }
+.is-underlined {
+  text-decoration: underline;
+}
 @keyframes slide-from-bottom {
   from {
     transform: translateY(50%);
@@ -71,6 +74,15 @@
   }
 }
 
+.login-input-elements-wrapper {
+  & label::first-letter {
+    text-transform: capitalize;
+  }
+}
+.modal-card-title::first-letter {
+  text-transform: capitalize;
+}
+
 .is-active .auth-modal {
   animation-name: slide-from-bottom;
   animation-duration: 0.4s;
@@ -82,9 +94,10 @@
   -webkit-animation-timing-function: ease-out;
   -webkit-animation-iteration-count: 1;
 }
-@media screen and (min-width: 1200px) {
+@media screen and (min-width: 769px) {
   .modal-content,
   .modal-card {
-    width: 840px;
+    min-width: 640px;
+    width: auto;
   }
 }
