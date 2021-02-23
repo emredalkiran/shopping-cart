@@ -1,45 +1,86 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
+import { stat } from 'fs'
 import { ProductState, RootState } from '../types'
 
-interface Abcd {
+interface StockUpdate {
   updateType: string
   productId: string
 }
 
 const initialState: ProductState = {
   products: [],
-  shoppingCart: [],
+  shoppingCart: localStorage.getItem('shoppingCart')
+    ? JSON.parse(localStorage.getItem('shoppingCart')!)
+    : {},
   isProductsLoading: false
 }
 
 export const getProducts = createAsyncThunk('product/getProducts', async () => {
-  console.log('Server: ', process.env.REACT_APP_API_SERVER)
-  const response = await axios.get(
-    `${process.env.REACT_APP_API_SERVER}/products`
-  )
+  const response = await axios.get(`${process.env.API_SERVER}/products`)
   return response.data
 })
 
 export const updateProductStock = createAsyncThunk(
   'product/updateProductStock',
-  async ({ updateType, productId }: Abcd) => {
-    const response = await axios.put(
-      `${process.env.REACT_APP_API_SERVER}/products/${updateType}`,
-      {
-        productId: productId
-      }
-    )
+  async ({ updateType, productId }: StockUpdate) => {
+    const response = await axios.put(`${process.env.API_SERVER}/products/${updateType}`, {
+      productId: productId
+    })
     return response.data
   }
 )
 
+export const fetchProducstInCart = createAsyncThunk('product/fetchProducstInCart', async () => {
+  const response = await axios.get(`${process.env.API_SERVER}/cart/`, { withCredentials: true })
+  return response.data
+})
+
+export const updateCart = createAsyncThunk(
+  'product/updateCart',
+  async (shoppingCart: Record<string, number>) => {
+    const response = await axios.put(`${process.env.API_SERVER}/cart/addItems`, shoppingCart, {
+      withCredentials: true
+    })
+    return response.data
+  }
+)
 const productSlice = createSlice({
   name: 'product',
   initialState,
   reducers: {
     changeProductStock(state, action) {
       state.products[action.payload.id].stock = action.payload.stock
+    },
+    addToCart(state, action) {
+      if (state.products.find((el) => el.productId === action.payload.productId)!.stock > 0) {
+        if (action.payload.productId in state.shoppingCart) {
+          state.shoppingCart[action.payload.productId]++
+        } else {
+          state.shoppingCart[action.payload.productId] = 1
+        }
+        state.products.find((el) => el.productId === action.payload.productId)!.stock--
+      }
+    },
+    removeFromCart(state, action) {
+      if (state.shoppingCart[action.payload.productId] > 0) {
+        if (action.payload.productId in state.shoppingCart) {
+          state.shoppingCart[action.payload.productId]--
+          state.products.find((el) => el.productId === action.payload.productId)!.stock++
+          if (state.shoppingCart[action.payload.productId] === 0) {
+            delete state.shoppingCart[action.payload.productId]
+          }
+          state.products.find((el) => el.productId === action.payload.productId)!.stock--
+        }
+      }
+    },
+    emptyCart(state) {
+      state.products.forEach((el, index) => {
+        if (state.shoppingCart[el.productId]) {
+          state.products[index].stock += state.shoppingCart[el.productId]
+        }
+      })
+      state.shoppingCart = {}
     }
   },
   extraReducers: (builder) => {
@@ -48,8 +89,8 @@ const productSlice = createSlice({
         state.isProductsLoading = true
       })
       .addCase(getProducts.fulfilled, (state, action) => {
-        console.log('Action payload:', action.payload)
         state.isProductsLoading = false
+
         state.products = action.payload.products
       })
       .addCase(getProducts.rejected, (state, action) => {
@@ -57,18 +98,32 @@ const productSlice = createSlice({
         state.products = []
       })
       .addCase(updateProductStock.fulfilled, (state, action) => {
-        console.log('Fulfilled ', action.payload.productId)
-        state.products.find(
-          (el) => el.productId === action.payload.productId
-        )!.stock = action.payload.stock
+        state.products.find((el) => el.productId === action.payload.productId)!.stock =
+          action.payload.stock - (state.shoppingCart[action.payload.productId] || 0)
       })
       .addCase(updateProductStock.rejected, (state, action) => {
         // In a production level app, user should be notified that the stock could not be updated via a noticication module.
+      })
+      .addCase(fetchProducstInCart.fulfilled, (state, action) => {
+        if (action.payload.items) {
+          state.shoppingCart = action.payload.items
+        }
       })
   }
 })
 
 export const selectProducts = (state: RootState) => state.product.products
+export const selectShoppingCart = (state: RootState) => state.product.shoppingCart
+export const selectIsProductsLoading = (state: RootState) => state.product.isProductsLoading
+export const selectProductsInCart = (state: RootState) => {
+  let total = 0
+  Object.keys(state.product?.shoppingCart)?.forEach(
+    (key) => (total += state.product.shoppingCart[key])
+  )
+  return total
+}
+
+export const { addToCart, removeFromCart, emptyCart } = productSlice.actions
 
 const reducer = productSlice.reducer
 export default reducer

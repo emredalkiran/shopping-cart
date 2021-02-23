@@ -1,82 +1,124 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
-import { AuthState, RootState } from '../types'
+import { AuthState, RootState, LoginStatus } from '../types'
+import Cookies from 'js-cookie'
+interface AuthError {
+  success: boolean
+  error: string
+}
 
 const initialState: AuthState = {
-  isLoggedIn: false,
+  isLoggedIn: localStorage.getItem('isLoggedIn') ? LoginStatus.Pending : LoginStatus.LoggedOut,
   name: '',
   authError: ''
 }
 
-export const login = createAsyncThunk('auth/login', async (credentials) => {
+export const login = createAsyncThunk<
+  Record<string, any>,
+  Record<string, string>,
+  { rejectValue: AuthError }
+>('auth/login', async (credentials, { rejectWithValue }) => {
   try {
-    const response = await axios.post(
-      `${process.env.REACT_APP_API_SERVER}/api/v1/user/login`,
-      credentials
-    )
+    const response = await axios.post('/user/login', credentials, {
+      withCredentials: true
+    })
     return response.data
   } catch (err) {
-    if (err.response.status === 401) return err.response.data.response
-    else {
-      return { success: false, error: 'Oops, something went wrong!' }
-    }
+    return rejectWithValue(err.response.data.response)
   }
 })
 
-export const signup = createAsyncThunk('auth/signup', async (credentials) => {
+export const signup = createAsyncThunk<
+  Record<string, any>,
+  Record<string, string>,
+  { rejectValue: AuthError }
+>('auth/signup', async (credentials, { rejectWithValue }) => {
   try {
-    const response = await axios.post(
-      `${process.env.REACT_APP_API_SERVER}/api/v1/user/signup`,
-      credentials
-    )
-    return response.data
+    const response = await axios.post(`${process.env.API_SERVER}/user/signup`, credentials, {
+      withCredentials: true
+    })
+    return await response.data
   } catch (err) {
-    //TODO: handle async network request error
-
-    if (err.response.status === 400) return err.response.data.response
-    else {
-      return { success: false, error: 'Please check your credentials' }
-    }
+    return rejectWithValue(err.response.data.response)
   }
+})
+
+export const validateLoginStatus = createAsyncThunk('auth/validate', async () => {
+  const response = await axios.post(
+    `${process.env.API_SERVER}/user/validate`,
+    {},
+    { withCredentials: true }
+  )
+  return response.data
+})
+export const logOutUser = createAsyncThunk('auth/logout', async () => {
+  const response = await axios.post(
+    `${process.env.API_SERVER}/user/logout`,
+    {},
+    { withCredentials: true }
+  )
+  return await response.data
 })
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    loggedIn(sliceState, action) {
-      sliceState.isLoggedIn = action.payload.isLoggedIn
-      sliceState.name = action.payload.name
+    loggedIn(state, action) {
+      state.isLoggedIn = action.payload.isLoggedIn
+      state.name = action.payload.name
+    },
+    clearAuthError(state) {
+      state.authError = ''
+    },
+    logOut(state, action) {
+      state.isLoggedIn = LoginStatus.LoggedOut
+      state.name = ''
     }
   },
   extraReducers: (builder) => {
     builder
+      .addCase(login.pending, (state, action) => {
+        state.isLoggedIn = LoginStatus.LoggedOut
+        state.authError = ''
+      })
       .addCase(login.fulfilled, (state, action) => {
-        state.isLoggedIn = true
+        state.isLoggedIn = LoginStatus.LoggedIn
         state.name = action.payload.name
+      })
+      .addCase(login.rejected, (state, action) => {
+        state.isLoggedIn = LoginStatus.LoggedOut
+        state.authError = action.payload!.error
       })
       .addCase(signup.pending, (state, action) => {
         state.authError = ''
       })
       .addCase(signup.fulfilled, (state, action) => {
-        if (!action.payload.success) {
-          state.isLoggedIn = false
-          state.name = ''
-        } else {
-          state.isLoggedIn = true
-          state.name = action.payload.name
-        }
+        state.isLoggedIn = LoginStatus.LoggedIn
+        state.name = action.payload.name
       })
       .addCase(signup.rejected, (state, action) => {
-        state.isLoggedIn = true
+        state.isLoggedIn = LoginStatus.LoggedIn
+        state.authError = action.payload?.error || 'Oops, something went wrong'
+      })
+      .addCase(validateLoginStatus.fulfilled, (state, action) => {
+        state.isLoggedIn = LoginStatus.LoggedIn
+        state.name = action.payload.name
+      })
+      .addCase(validateLoginStatus.rejected, (state, action) => {
+        state.isLoggedIn = LoginStatus.LoggedOut
+      })
+      .addCase(logOutUser.fulfilled, (state, action) => {
+        state.isLoggedIn = LoginStatus.LoggedOut
+        state.name = ''
       })
   }
 })
 
 export const selectUserName = (state: RootState) => state.auth.name
 export const selectLoginStatus = (state: RootState) => state.auth.isLoggedIn
-
-export const { loggedIn } = authSlice.actions
+export const selectAuthError = (state: RootState) => state.auth.authError
+export const { loggedIn, clearAuthError } = authSlice.actions
 
 const reducer = authSlice.reducer
 export default reducer
