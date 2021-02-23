@@ -1,5 +1,5 @@
 import { User } from '../utils/interfaces'
-import { Db } from 'mongodb'
+import { Db, ObjectID } from 'mongodb'
 
 export interface UserRepoInterface {
   addUser(user: User): Promise<any>
@@ -17,7 +17,7 @@ export class UserRepository implements UserRepoInterface {
   }
 
   findUserByID(id: string): Promise<any> {
-    return this.db.collection('users').findOne({ _id: id })
+    return this.db.collection('users').findOne({ _id: new ObjectID(id) })
   }
 
   findUserByEmail(email: string): Promise<any> {

@@ -1,3 +1,5 @@
+import express from 'express'
+
 import { userAuthenticationSchema, userSchema } from './user-schema'
 import {
   ValidationError,
@@ -6,7 +8,7 @@ import {
 } from '../utils/errors'
 import { errorMessages } from '../utils/error-messages'
 import { databaseErrors } from '../utils/database-error-codes'
-import { UserRepo } from './user-repository'
+import { UserRepoInterface } from './user-repository'
 import { RequestData, User } from '../utils/interfaces'
 import { Hash } from '../utils/hash'
 
@@ -17,16 +19,17 @@ interface UserDetails {
 }
 
 export interface UserServiceInterface {
-  userRepository: UserRepo
+  userRepository: UserRepoInterface
   login(request: RequestData): Promise<string>
   addUser(request: RequestData): Promise<string>
-  login(request: RequestData): Promise<string>
+  logOut(request: RequestData): Promise<string>
+  validate(request: RequestData): Promise<string>
 }
 
 export class UserService {
-  userRepository: UserRepo
+  userRepository: UserRepoInterface
   private validator: Hash
-  constructor(userRepository: UserRepo, validator: Hash) {
+  constructor(userRepository: UserRepoInterface, validator: Hash) {
     this.userRepository = userRepository
     this.validator = validator
   }
@@ -34,7 +37,7 @@ export class UserService {
   async login(request: RequestData): Promise<string> {
     const { error, value } = userAuthenticationSchema.validate(request.body)
     if (error) {
-      throw new ValidationError(error)
+      throw new ValidationError('Valid')
     }
     const user = await this.userRepository.findUserByEmail(value.email)
     if (
@@ -62,7 +65,7 @@ export class UserService {
     try {
       const queryResult = await this.userRepository.addUser(userData)
       const result = {
-        success: 'true',
+        success: true,
         id: queryResult.insertedId,
         name: userData.name
       }
@@ -70,13 +73,47 @@ export class UserService {
       return JSON.stringify(result)
     } catch (err) {
       if (err.code === databaseErrors.DUPLICATE_KEY) {
-        return JSON.stringify({
-          success: false,
-          error: 'This email address is already in use'
-        })
+        throw new DatabaseInsertError(errorMessages.DUPLICATE_EMAIL)
       } else {
         throw new DatabaseInsertError(errorMessages.UNKNOWN_ERROR)
       }
+    }
+  }
+  async validate(request: RequestData): Promise<string> {
+    if (request.session.id && request.session.userId) {
+      console.log('User id: ', request.session.userId)
+      try {
+        const queryResult = await this.userRepository.findUserByID(
+          request.session.userId!
+        )
+        console.log('queryResult : ', queryResult)
+        const result = {
+          success: true,
+          name: queryResult.name
+        }
+        return JSON.stringify(result)
+      } catch (err) {
+        request.session.destroy((err) => {
+          console.log(err)
+        })
+        throw new ValidationError('Validation error 1')
+      }
+    } else {
+      throw new ValidationError('Validation error 2')
+    }
+  }
+
+  async logOut(request: RequestData): Promise<string> {
+    if (request.session) {
+      request.session.destroy((err) => {
+        if (err) throw new ValidationError("Can't destroy session")
+      })
+      const result = {
+        succes: true
+      }
+      return JSON.stringify(result)
+    } else {
+      throw new ValidationError('No session')
     }
   }
 
