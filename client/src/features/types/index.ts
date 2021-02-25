@@ -14,6 +14,7 @@ export enum LoginStatus {
 export interface AuthState {
   isLoggedIn: LoginStatus
   name: string
+  id: string
   authError: string
 }
 
