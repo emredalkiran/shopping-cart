@@ -48,12 +48,14 @@ export function useFormInput({ formFieldNames, type }: FormData) {
   const handleInputBlur = (fieldName: string) => {
     setTouched({ ...touched, [fieldName]: true })
   }
-  const validateForm = () => {
+  const validateForm = async () => {
+    const touchAllFields = {}
     formFieldNames.forEach((key: string) => {
-      setTouched({ ...touched, [key]: true })
+      touchAllFields[key] = true
     })
+    setTouched(touchAllFields)
     try {
-      validationSchema.validateSync(inputs, {
+      await validationSchema.validate(inputs, {
         abortEarly: false
       })
       const credentials: Record<string, string> = {}
@@ -64,13 +66,15 @@ export function useFormInput({ formFieldNames, type }: FormData) {
     } catch (err) {
       const errorFields: Array<string> = []
       const errors: Record<string, string> = {}
+      console.log(err.inner)
       err.inner.forEach((error: { path: string; message: string }) => {
         if (!errorFields.includes(error.path)) {
           errorFields.push(error.path)
+          console.log(errorFields)
           errors[error.path] = error.message
         }
       })
-      setErrorMessages(errors)
+      setErrorMessages({ ...errors })
     }
   }
 
