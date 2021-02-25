@@ -29,7 +29,7 @@ async function init() {
     const serviceContainer = creaeteServiceContainer(db)
     app.configureApp(serviceContainer, io)
     server.listen({ host: '0.0.0.0', port: port }, () =>
-      console.log(`Server listening on port ${port}`)
+      console.log(`Server listening at localhost on port 5000`)
     )
   } catch (err) {
     console.log(err)
