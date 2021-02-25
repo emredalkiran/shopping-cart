@@ -6,11 +6,7 @@ import { ServiceContainer } from '../service-container'
 export class CartRouter implements Router {
   app: express.Application
   cartController: CartController
-  constructor(
-    app: express.Application,
-
-    serviceContainer: ServiceContainer
-  ) {
+  constructor(app: express.Application, serviceContainer: ServiceContainer) {
     this.app = app
     this.cartController = new CartController(serviceContainer.cart.service)
     this.setRoutes()
