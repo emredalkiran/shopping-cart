@@ -7819,8 +7819,22 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
     transform: translateY(0);
     opacity: 1; } }
 
-.login-input-elements-wrapper label::first-letter {
-  text-transform: capitalize; }
+.input-error {
+  font-size: 0.8rem;
+  color: #f14668;
+  position: relative;
+  bottom: 0;
+  padding-top: 0.1rem; }
+
+.login-input-elements-wrapper {
+  padding: 1em;
+  display: block; }
+  .login-input-elements-wrapper .input-wrapper {
+    height: 6em; }
+  .login-input-elements-wrapper .message-body {
+    padding: 0.5em 1.5em; }
+  .login-input-elements-wrapper label::first-letter {
+    text-transform: capitalize; }
 
 .modal-card-title::first-letter {
   text-transform: capitalize; }

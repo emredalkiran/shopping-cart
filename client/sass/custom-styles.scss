@@ -74,11 +74,31 @@
   }
 }
 
+.input-error {
+  font-size: 0.8rem;
+  color: $red;
+  position: relative;
+  bottom: 0;
+  padding-top: 0.1rem;
+}
+
 .login-input-elements-wrapper {
+  padding: 1em;
+  display: block;
+
+  .input-wrapper {
+    height: 6em;
+  }
+
+  .message-body {
+    padding: 0.5em 1.5em;
+  }
+
   & label::first-letter {
     text-transform: capitalize;
   }
 }
+
 .modal-card-title::first-letter {
   text-transform: capitalize;
 }
