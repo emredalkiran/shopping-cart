@@ -1,0 +1,24 @@
+version: '3'
+services:
+  mongo:
+    build: ./database
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: shoppingcart
+    ports:
+      - 27017:27017
+  redis:
+    image: redis
+    container_name: cache
+    ports:
+      - 6379:6379
+  server:
+    build: ./
+    depends_on:
+      - mongo
+      - redis
+    links:
+      - mongo
+      - redis
+    ports:
+      - 5000:8080
