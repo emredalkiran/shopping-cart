@@ -5,21 +5,30 @@ import {
   addToCart,
   removeFromCart,
   selectShoppingCart,
-  fetchProducstInCart,
   updateCart
 } from '../../features/product/product-slice'
 import { selectLoginStatus } from '../../features/auth/auth-slice'
 import { useSelector } from 'react-redux'
 import { LoginStatus, RootState } from '../../features/types'
 import { useAppDispatch } from '../../store'
+import { Socket } from 'socket.io-client'
 interface ItemdetailProps {
   productId: string
   name: string
   stock: number
   price: number
+  sendaddItemToCart: (itemData: Record<string, string | number>) => void
+  removeItemFromCart: (itemData: Record<string, string | number>) => void
 }
 
-function ItemDetail({ productId, name, stock, price }: ItemdetailProps) {
+function ItemDetail({
+  productId,
+  name,
+  stock,
+  price,
+  sendaddItemToCart,
+  removeItemFromCart
+}: ItemdetailProps) {
   const dispatch = useAppDispatch()
   const numberOfProductInCart = useSelector(
     (state: RootState) => state.product.shoppingCart[productId] || 0
@@ -34,10 +43,12 @@ function ItemDetail({ productId, name, stock, price }: ItemdetailProps) {
 
   const handleAddtoCart = async (e: MouseEvent | TouchEvent) => {
     dispatch(addToCart({ productId: productId }))
+    sendaddItemToCart({ id: productId, quantity: 1 })
   }
 
   const handleRemoveFromCart = async (e: MouseEvent | TouchEvent) => {
     dispatch(removeFromCart({ productId: productId }))
+    removeItemFromCart({ id: productId, quantity: 1 })
   }
   const updateCustomerCart = useCallback(
     async (shoppingCart: Record<string, number>) => {
@@ -45,10 +56,6 @@ function ItemDetail({ productId, name, stock, price }: ItemdetailProps) {
     },
     [dispatch]
   )
-
-  const checkProductsInCart = useCallback(async () => {
-    await dispatch(fetchProducstInCart())
-  }, [dispatch])
 
   useEffect(() => {
     localStorage.setItem('shoppingCart', JSON.stringify(shoppingCart))
