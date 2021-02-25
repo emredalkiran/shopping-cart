@@ -14,20 +14,8 @@ const webpackConfig = (env: Record<string, string>): Configuration => ({
     plugins: [new TsconfigPathsPlugin()]
   },
   output: {
-    path: path.join(__dirname, '/dist'),
+    path: path.join(__dirname, 'client-build'),
     filename: 'build.js'
-  },
-  devServer: {
-    proxy: {
-      '/user/login': {
-        target: 'http://127.0.0.1:8080/',
-        pathRewrite: { '^/api': '' }
-      },
-      'user/validate': {
-        target: 'http://127.0.0.1:8080/',
-        pathRewrite: { '^/api': '' }
-      }
-    }
   },
   module: {
     rules: [
@@ -36,8 +24,15 @@ const webpackConfig = (env: Record<string, string>): Configuration => ({
         loader: 'ts-loader',
         options: {
           transpileOnly: true
+        }
+      },
+      {
+        test: /^(?!.*\.test\.tsx$).*\.tsx$/,
+        loader: 'ts-loader',
+        options: {
+          transpileOnly: true
         },
-        exclude: /dist/
+        exclude: '/node_modules/'
       },
       {
         test: /\.css$/i,
