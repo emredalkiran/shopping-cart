@@ -23,10 +23,11 @@ export default function formInput({
 }: FormInput) {
   return (
     <div className="input-wrapper">
-      <label className="label" htmlFor="name">
+      <label id={fieldName} className="label" htmlFor={fieldName}>
         {label}
       </label>
       <input
+        aria-labelledby={fieldName}
         type={type}
         name={fieldName}
         className={`input ${errorMessage !== '' && touched ? 'is-danger' : ''}`}
