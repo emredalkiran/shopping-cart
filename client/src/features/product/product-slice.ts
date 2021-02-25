@@ -17,14 +17,14 @@ const initialState: ProductState = {
 }
 
 export const getProducts = createAsyncThunk('product/getProducts', async () => {
-  const response = await axios.get(`${process.env.API_SERVER}/products`)
+  const response = await axios.get('/products')
   return response.data
 })
 
 export const updateProductStock = createAsyncThunk(
   'product/updateProductStock',
   async ({ updateType, productId }: StockUpdate) => {
-    const response = await axios.put(`${process.env.API_SERVER}/products/${updateType}`, {
+    const response = await axios.put(`/products/${updateType}`, {
       productId: productId
     })
     return response.data
@@ -32,14 +32,14 @@ export const updateProductStock = createAsyncThunk(
 )
 
 export const fetchProducstInCart = createAsyncThunk('product/fetchProducstInCart', async () => {
-  const response = await axios.get(`${process.env.API_SERVER}/cart/`, { withCredentials: true })
+  const response = await axios.get('/cart', { withCredentials: true })
   return response.data
 })
 
 export const updateCart = createAsyncThunk(
   'product/updateCart',
   async (shoppingCart: Record<string, number>) => {
-    const response = await axios.put(`${process.env.API_SERVER}/cart/addItems`, shoppingCart, {
+    const response = await axios.put('/cart/addItems', shoppingCart, {
       withCredentials: true
     })
     return response.data
@@ -64,20 +64,24 @@ const productSlice = createSlice({
     },
     removeFromCart(state, action) {
       if (state.shoppingCart[action.payload.productId] > 0) {
-        if (action.payload.productId in state.shoppingCart) {
-          state.shoppingCart[action.payload.productId]--
-          state.products.find((el) => el.productId === action.payload.productId)!.stock++
-          if (state.shoppingCart[action.payload.productId] === 0) {
-            delete state.shoppingCart[action.payload.productId]
-          }
-          state.products.find((el) => el.productId === action.payload.productId)!.stock--
+        state.shoppingCart[action.payload.productId]--
+        state.products.find((el) => el.productId === action.payload.productId)!.stock++
+        if (state.shoppingCart[action.payload.productId] === 0) {
+          delete state.shoppingCart[action.payload.productId]
         }
       }
     },
+    arrangeProducts(state) {
+      state.products.forEach((product, index) => {
+        if (state.shoppingCart[product.productId] && state.shoppingCart[product.productId] > 0) {
+          state.products[index].stock -= state.shoppingCart[product.productId]
+        }
+      })
+    },
     emptyCart(state) {
-      state.products.forEach((el, index) => {
-        if (state.shoppingCart[el.productId]) {
-          state.products[index].stock += state.shoppingCart[el.productId]
+      state.products.forEach((product, index) => {
+        if (state.shoppingCart[product.productId]) {
+          state.products[index].stock += state.shoppingCart[product.productId]
         }
       })
       state.shoppingCart = {}
@@ -90,7 +94,6 @@ const productSlice = createSlice({
       })
       .addCase(getProducts.fulfilled, (state, action) => {
         state.isProductsLoading = false
-
         state.products = action.payload.products
       })
       .addCase(getProducts.rejected, (state, action) => {
@@ -102,7 +105,7 @@ const productSlice = createSlice({
           action.payload.stock - (state.shoppingCart[action.payload.productId] || 0)
       })
       .addCase(updateProductStock.rejected, (state, action) => {
-        // In a production level app, user should be notified that the stock could not be updated via a noticication module.
+        // In a production level app, user should be notified that the stock could not be updated via a notification module.
       })
       .addCase(fetchProducstInCart.fulfilled, (state, action) => {
         if (action.payload.items) {
@@ -123,7 +126,7 @@ export const selectProductsInCart = (state: RootState) => {
   return total
 }
 
-export const { addToCart, removeFromCart, emptyCart } = productSlice.actions
+export const { addToCart, removeFromCart, emptyCart, arrangeProducts } = productSlice.actions
 
 const reducer = productSlice.reducer
 export default reducer

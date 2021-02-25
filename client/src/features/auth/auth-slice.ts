@@ -8,7 +8,8 @@ interface AuthError {
 }
 
 const initialState: AuthState = {
-  isLoggedIn: localStorage.getItem('isLoggedIn') ? LoginStatus.Pending : LoginStatus.LoggedOut,
+  isLoggedIn: Cookies.get('isLoggedIn') ? LoginStatus.Pending : LoginStatus.LoggedOut,
+  id: '',
   name: '',
   authError: ''
 }
@@ -34,7 +35,7 @@ export const signup = createAsyncThunk<
   { rejectValue: AuthError }
 >('auth/signup', async (credentials, { rejectWithValue }) => {
   try {
-    const response = await axios.post(`${process.env.API_SERVER}/user/signup`, credentials, {
+    const response = await axios.post('/user/signup', credentials, {
       withCredentials: true
     })
     return await response.data
@@ -44,19 +45,11 @@ export const signup = createAsyncThunk<
 })
 
 export const validateLoginStatus = createAsyncThunk('auth/validate', async () => {
-  const response = await axios.post(
-    `${process.env.API_SERVER}/user/validate`,
-    {},
-    { withCredentials: true }
-  )
+  const response = await axios.post('/user/validate', {}, { withCredentials: true })
   return response.data
 })
 export const logOutUser = createAsyncThunk('auth/logout', async () => {
-  const response = await axios.post(
-    `${process.env.API_SERVER}/user/logout`,
-    {},
-    { withCredentials: true }
-  )
+  const response = await axios.post('/user/logout', {}, { withCredentials: true })
   return await response.data
 })
 
@@ -84,6 +77,7 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoggedIn = LoginStatus.LoggedIn
+        state.id = action.payload.id
         state.name = action.payload.name
       })
       .addCase(login.rejected, (state, action) => {
@@ -104,6 +98,7 @@ const authSlice = createSlice({
       .addCase(validateLoginStatus.fulfilled, (state, action) => {
         state.isLoggedIn = LoginStatus.LoggedIn
         state.name = action.payload.name
+        state.id = action.payload.id
       })
       .addCase(validateLoginStatus.rejected, (state, action) => {
         state.isLoggedIn = LoginStatus.LoggedOut
@@ -118,6 +113,7 @@ const authSlice = createSlice({
 export const selectUserName = (state: RootState) => state.auth.name
 export const selectLoginStatus = (state: RootState) => state.auth.isLoggedIn
 export const selectAuthError = (state: RootState) => state.auth.authError
+export const selectUserId = (state: RootState) => state.auth.id
 export const { loggedIn, clearAuthError } = authSlice.actions
 
 const reducer = authSlice.reducer
