@@ -1,7 +1,6 @@
 import React, { MouseEvent, TouchEvent, useEffect, useCallback, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { LoginStatus } from 'src/features/types'
-import { boolean } from 'yup/lib/locale'
+import { LoginStatus } from '../../features/types'
 import {
   selectUserName,
   selectLoginStatus,
@@ -13,7 +12,8 @@ import {
   fetchProducstInCart,
   emptyCart,
   updateCart,
-  selectShoppingCart
+  selectShoppingCart,
+  arrangeProducts
 } from '../../features/product/product-slice'
 import { useAppDispatch } from '../../store'
 import { Bag } from '../Icons'
@@ -30,40 +30,53 @@ export default function Navbar({ handleClick }: NavbarProps) {
   const shoppingCart = useSelector(selectShoppingCart)
   const [isUserValidated, setUserValidated] = useState<boolean>(false)
 
-  const validateLogin = useCallback(async () => {
-    const result = await dispatch(validateLoginStatus())
-    setUserValidated(result.payload.success)
-  }, [dispatch])
-
   const checkProductsInUserCart = useCallback(async () => {
     await dispatch(fetchProducstInCart())
+
+    dispatch(arrangeProducts())
   }, [dispatch])
 
-  const updateCustomerCart = useCallback(async () => {
-    await dispatch(updateCart(shoppingCart))
+  const updateCustomerCart = useCallback(
+    async (shoppingCart) => {
+      await dispatch(updateCart(shoppingCart))
+    },
+    [dispatch]
+  )
+
+  const validateUserData = useCallback(async () => {
+    await dispatch(validateLoginStatus())
   }, [dispatch])
 
   const handleLogout = async () => {
     await dispatch(logOutUser())
     dispatch(emptyCart())
     localStorage.removeItem('shoppingCart')
+    setUserValidated(false)
   }
 
   useEffect(() => {
-    if (isLoggedin === LoginStatus.Pending) {
-      validateLogin()
+    if (isLoggedin === LoginStatus.Pending && !isUserValidated) {
+      validateUserData()
     }
-  }, [validateLogin, isLoggedin])
+  }, [validateUserData, isLoggedin, isUserValidated])
 
   useEffect(() => {
-    if (isLoggedin === LoginStatus.LoggedIn) {
+    if (isLoggedin === LoginStatus.LoggedIn && !isUserValidated) {
+      setUserValidated(true)
       if (localStorage.getItem('shoppingCart') === '{}' || !localStorage.getItem('shoppingCart')) {
         checkProductsInUserCart()
       } else {
-        updateCustomerCart()
+        updateCustomerCart(shoppingCart)
       }
     }
-  }, [checkProductsInUserCart, updateCustomerCart, isLoggedin])
+  }, [
+    validateUserData,
+    isLoggedin,
+    checkProductsInUserCart,
+    isUserValidated,
+    shoppingCart,
+    updateCustomerCart
+  ])
 
   return (
     <nav className="navbar pt-4 pb-4">
