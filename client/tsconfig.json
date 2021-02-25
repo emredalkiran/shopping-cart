@@ -16,7 +16,11 @@
     "downlevelIteration": true,
     "paths": {
       "components/*": ["src/components/*"]
-    }
+    },
+    "outDir": "../build"
   },
-  "include": ["./src", "./webpack.config.ts"]
+
+  "typeRoots": ["./src/types", "./node_modules/@types"],
+  "include": ["src/**/*", "./webpack.config.ts"],
+  "exclude": ["src/**/*.test.tsx"]
 }
