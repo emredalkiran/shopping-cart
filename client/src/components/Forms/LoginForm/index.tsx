@@ -1,6 +1,6 @@
 import React, { ChangeEvent, MouseEvent, TouchEvent, useEffect } from 'react'
 import { useSelector } from 'react-redux'
-import { login, selectLoginStatus, selectAuthError } from '../../../features/auth/auth-slice'
+import { login, selectAuthError } from '../../../features/auth/auth-slice'
 import { useAppDispatch } from '../../../store'
 import { useFormInput } from '../../../hooks'
 import FormInput from '../form-input'
@@ -15,7 +15,6 @@ export default function LoginForm({
   const formFieldNames = ['email', 'password']
   const type = 'login'
   const dispatch = useAppDispatch()
-  const isLoggedIn = useSelector(selectLoginStatus)
   const authError = useSelector(selectAuthError)
   const {
     inputs,
@@ -34,12 +33,11 @@ export default function LoginForm({
   }
   const handleSubmit = async (e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    const credentials = validateForm()
+    const credentials = await validateForm()
     if (credentials) {
       const result = await dispatch(login(credentials))
       if (result.payload.success) {
         close()
-        localStorage.setItem('isLoggedIn', '1')
       }
     }
   }

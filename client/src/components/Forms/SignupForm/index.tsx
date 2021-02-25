@@ -1,11 +1,6 @@
 import React, { ChangeEvent, MouseEvent, TouchEvent, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
-import {
-  signup,
-  selectLoginStatus,
-  selectAuthError,
-  clearAuthError
-} from '../../../features/auth/auth-slice'
+import { signup, selectAuthError } from '../../../features/auth/auth-slice'
 import { useFormInput } from '../../../hooks'
 import FormInput from '../form-input'
 import { useAppDispatch } from '../../../store'
@@ -14,7 +9,6 @@ function SignupForm({ close, changeModal }: { close: () => void; changeModal: ()
   const formFieldNames = ['name', 'lastName', 'email', 'password']
   const type = 'signup'
   const dispatch = useAppDispatch()
-  const isLoggedIn = useSelector(selectLoginStatus)
   const authError = useSelector(selectAuthError)
   const {
     inputs,
@@ -33,10 +27,12 @@ function SignupForm({ close, changeModal }: { close: () => void; changeModal: ()
   }
   const handleSubmit = async (e: MouseEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    const credentials = validateForm()
+    const credentials = await validateForm()
     if (credentials) {
       const result = await dispatch(signup(credentials))
       if (result.payload.success) close()
+    } else {
+      console.log('Tpucherd: ', touched)
     }
   }
 
