@@ -52,6 +52,7 @@ export class UserService {
       success: true
     })
     request.session.userId = response.id
+
     return JSON.stringify(response)
   }
 
@@ -89,6 +90,7 @@ export class UserService {
         console.log('queryResult : ', queryResult)
         const result = {
           success: true,
+          id: queryResult._id,
           name: queryResult.name
         }
         return JSON.stringify(result)
