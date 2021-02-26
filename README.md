@@ -21,5 +21,5 @@ Backend is using Node.js, Express, Redis, socket.io and MongoDB.
 - Users can add producst to their cart with out withou logging in to the system.
 - If they add items to their cart first and login later on, their cart keeps the items and update their cart info at the database.
 - If they sign in without any items added to their cart, the app checks the database if the user has any items in his/her cart from previous sessions.
-- Authentication is done with session based authentication. Redis is used as session store.
+- Authentication is provided with session based authentication. Redis is used as session store.
 - If a logged in user opens the app in two different tabs, the updates made in one tab is reflected immediately with a notification modal in the other tab.
