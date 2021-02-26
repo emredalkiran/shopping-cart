@@ -23,3 +23,5 @@ Backend is using Node.js, Express, Redis, socket.io and MongoDB.
 - If they sign in without any items added to their cart, the app checks the database if the user has any items in his/her cart from previous sessions.
 - Authentication is provided with session based authentication. Redis is used as session store.
 - If a logged in user opens the app in two different tabs, the updates made in one tab is reflected immediately with a notification modal in the other tab.
+- .env file is committed for the app to be rebuilt without any configuration. It should not be commited to public repositories normally.
+- User sessions are valid for 30 minutes. After this period, their session expires. The app follows this with server side session, a http only cookie with 30 mins. expire time and a normal cookie providing true/false value with 30 mins expire time. The frontend app checks for this true/false value to send a validation request for authetication. At a production level app, the standard cookie can be ommited from the app and the authentication can be provided only via checking server side session with http only cookie and server side rendering.
